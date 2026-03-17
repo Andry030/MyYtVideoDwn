@@ -212,22 +212,6 @@ Depuis l'onglet **Historique** vous pouvez :
 - 🗑 **Supprimer** une entrée individuelle
 - 🧹 **Tout effacer** en un clic
 
----
-
-## 📤 Partager avec des amis
-
-La façon la plus simple est de partager le lien du dépôt :
-
-```
-https://github.com/Andry030/MyYtVideoDwn.git
-```
-
-Vos amis n'ont qu'à suivre les étapes de ce README depuis le début. Ils ont seulement besoin de **Python 3.9+**, **ffmpeg** et **Git**.
-
-Vous pouvez aussi envoyer le dossier directement (zip) — dans ce cas ils sautent l'étape `git clone` et partent directement de l'étape 3.
-
----
-
 ## 🛠 Créer un exécutable autonome `.exe` (Windows, optionnel)
 
 ```bash
