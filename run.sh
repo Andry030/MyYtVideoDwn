@@ -216,6 +216,7 @@ step "6/6" "Installation des dépendances et intégration système..."
 
 # Passer le chemin du venv python à install.py via variable d'environnement
 export YTDLX_VENV_PYTHON="$VENV_PYTHON"
+export YTDLX_VENV_STARTED=1 
 "$VENV_PYTHON" install.py || {
     warn "install.py a rencontré une erreur. Installation pip directe dans le venv..."
     "$VENV_PYTHON" -m pip install --upgrade --quiet customtkinter yt-dlp Pillow

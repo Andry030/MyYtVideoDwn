@@ -54,14 +54,39 @@ def _venv_python():
 
 
 def _in_venv():
-    venv_real = os.path.realpath(VENV_DIR)
-    exe_real  = os.path.realpath(sys.executable)
-    return exe_real.startswith(venv_real)
+    """
+    Retourne True si le script tourne effectivement depuis le venv attendu.
+    On teste plusieurs choses pour éviter les faux négatifs (symlinks, sys.prefix, marqueur env).
+    """
+    try:
+        venv_real = os.path.realpath(VENV_DIR)
+        exe_real  = os.path.realpath(sys.executable)
+        if exe_real.startswith(venv_real):
+            return True
+
+        # Parfois l'exécutable est un symlink vers /usr/bin/python, mais sys.prefix
+        # pointe correctement vers le venv. Tester sys.prefix aussi.
+        prefix_real = os.path.realpath(getattr(sys, "prefix", ""))
+        if prefix_real and prefix_real.startswith(venv_real):
+            return True
+
+        # Vérifier si on a relancé le script avec notre marqueur d'env.
+        env_mark = os.environ.get("YTDLX_VENV_STARTED")
+        env_venv_py = os.environ.get("YTDLX_VENV_PYTHON")
+        if env_mark == "1":
+            # si on a enregistré quel python on a voulu utiliser, comparer les realpaths
+            if env_venv_py and os.path.realpath(env_venv_py) == exe_real:
+                return True
+            # sinon, si l'utilisateur a forcé le marqueur, considérer qu'on est déjà relancé
+            return True
+
+    except Exception:
+        # En cas d'erreur inattendue, retourner False pour garder le comportement sûr.
+        return False
+
+    return False
 
 
-# =============================================================================
-#  ÉTAPE 1 — Création / réutilisation du venv
-# =============================================================================
 def create_venv():
     venv_py = _venv_python()
 
@@ -76,13 +101,32 @@ def create_venv():
     else:
         print(f"  ✓ Venv existant réutilisé  →  {VENV_DIR}")
 
-    # Relancer depuis le venv
+    # Si on arrive ici, on a un venv plausible. Relancer depuis le python du venv
+    # mais protéger contre une boucle infinie : poser un marqueur d'environnement.
+    if os.environ.get("YTDLX_VENV_STARTED") == "1":
+        # On avait déjà tenté de relancer mais _in_venv() est toujours False.
+        # Éviter de relancer à l'infini : avertir et continuer avec l'interpréteur courant.
+        print("  ⚠ Attention : relance depuis le venv tentée précédemment mais non détectée.")
+        print(f"    sys.executable = {sys.executable}")
+        print(f"    attendu venv python = {venv_py}")
+        print("    → Continuer sans relancer pour éviter une boucle infinie.")
+        return
+
     print(f"  → Relancement depuis le venv...")
     env  = os.environ.copy()
     env["YTDLX_VENV_PYTHON"] = venv_py
+    env["YTDLX_VENV_STARTED"] = "1"
     args = [venv_py, __file__] + sys.argv[1:]
-    os.execve(venv_py, args, env)
-    # os.execve ne retourne jamais
+    try:
+        os.execve(venv_py, args, env)
+    except FileNotFoundError:
+        print("  ✖ Erreur : l'exécutable du venv introuvable au moment du relancement.")
+        print(f"    Chemin attendu : {venv_py}")
+    except PermissionError:
+        print("  ✖ Erreur : permission refusée en essayant d'exécuter le python du venv.")
+    except OSError as e:
+        print(f"  ✖ Erreur OS lors du execve : {e}")
+    # Si execve échoue, on continue (évite boucle infinie).
 
 
 # =============================================================================
