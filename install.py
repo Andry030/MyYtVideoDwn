@@ -426,8 +426,45 @@ def uninstall():
 # ╔══════════════════════════════════════════════════════════════════════════════
 #  MAIN
 # ╚══════════════════════════════════════════════════════════════════════════════
+# ╔══════════════════════════════════════════════════════════════════════════════
+#  INSTALLATION DES DÉPENDANCES PYTHON
+# ╚══════════════════════════════════════════════════════════════════════════════
+REQUIREMENTS = [
+    "customtkinter>=5.2.0",
+    "yt-dlp>=2024.1.0",
+    "Pillow>=9.0.0",
+]
+
+def install_dependencies():
+    """Installe les dépendances Python via pip si elles ne sont pas déjà présentes."""
+    print("── Vérification des dépendances Python ────────────────────────────")
+
+    pip_cmd = [sys.executable, "-m", "pip", "install", "--upgrade", "--quiet"]
+
+    # Vérifier si un requirements.txt existe à côté du script
+    req_file = os.path.join(SCRIPT_DIR, "requirements.txt")
+    if os.path.isfile(req_file):
+        print(f"  → Utilisation de {req_file}")
+        cmd = pip_cmd + ["-r", req_file]
+    else:
+        print(f"  → Installation directe : {', '.join(REQUIREMENTS)}")
+        cmd = pip_cmd + REQUIREMENTS
+
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode == 0:
+            print("  ✓ Dépendances installées avec succès.")
+        else:
+            print("  ⚠ Avertissement lors de l'installation des dépendances :")
+            print(result.stderr.strip())
+    except Exception as e:
+        print(f"  ✗ Erreur pip : {e}")
+        print("  Essayez manuellement : pip install customtkinter yt-dlp Pillow")
+    print()
+
+
 def main():
-    # Vérification que ytdlx_pro.py existe
+    # Vérification que app.py existe
     if not os.path.isfile(MAIN_PY):
         print(f"\n  ERREUR : {MAIN_PY} introuvable.")
         print("  Placez install.py dans le même dossier que app.py.")
@@ -445,6 +482,10 @@ def main():
     print(f"   Python           : {sys.executable}")
     print()
 
+    # 1. Installer les dépendances Python
+    install_dependencies()
+
+    # 2. Intégration système (raccourcis / icônes)
     if sys.platform == "linux":
         install_linux()
     elif sys.platform == "win32":
