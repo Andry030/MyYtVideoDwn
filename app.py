@@ -115,7 +115,6 @@ class HistoryManager:
         self._entries: list[dict] = []
         self._load()
 
-    # ── Persistance ────────────────────────────────────────────────────────
     def _load(self):
         try:
             with open(self.FILE, "r", encoding="utf-8") as f:
@@ -129,7 +128,6 @@ class HistoryManager:
                 json.dump(self._entries, f, ensure_ascii=False, indent=2)
         except Exception: pass
 
-    # ── API ────────────────────────────────────────────────────────────────
     def add(self, title, url, thumb_url, quality, filepath, size_bytes=None) -> dict:
         entry = {
             "id":         str(uuid.uuid4()),
@@ -141,7 +139,7 @@ class HistoryManager:
             "date":       datetime.now().strftime("%d/%m/%Y  %H:%M"),
             "size_bytes": size_bytes or 0,
         }
-        self._entries.insert(0, entry)   # plus récent en premier
+        self._entries.insert(0, entry)
         self._save()
         return entry
 
@@ -182,7 +180,6 @@ class HistoryRow(ctk.CTkFrame):
     def _build(self):
         self.columnconfigure(1, weight=1)
 
-        # ── Miniature ─────────────────────────────────────────────────────
         tf = ctk.CTkFrame(self, fg_color=C["thumb_bg"], corner_radius=6,
                           width=THUMB_W, height=THUMB_H)
         tf.grid(row=0, column=0, rowspan=2, padx=(10,8), pady=8, sticky="n")
@@ -192,7 +189,6 @@ class HistoryRow(ctk.CTkFrame):
                                         width=THUMB_W, height=THUMB_H)
         self._thumb_lbl.place(relx=0.5, rely=0.5, anchor="center")
 
-        # ── Titre + date + qualité ─────────────────────────────────────────
         mid = ctk.CTkFrame(self, fg_color="transparent")
         mid.grid(row=0, column=1, sticky="ew", padx=(0,8), pady=(8,2))
         mid.columnconfigure(0, weight=1)
@@ -222,7 +218,6 @@ class HistoryRow(ctk.CTkFrame):
                      text_color=C["dim"],
         ).pack(side="left", padx=(4,0))
 
-        # ── Boutons ────────────────────────────────────────────────────────
         bb = ctk.CTkFrame(self, fg_color="transparent")
         bb.grid(row=0, column=2, rowspan=2, padx=(0,10), pady=8, sticky="n")
 
@@ -234,26 +229,22 @@ class HistoryRow(ctk.CTkFrame):
                 text_color=tc, corner_radius=7, command=cmd,
             )
 
-        # Re-télécharger
         mk("↓ Retéléch.", lambda: self.on_redownload(self.entry),
            tc=C["accent_glow"], w=90).pack(pady=(0,4))
 
         btn_row = ctk.CTkFrame(bb, fg_color="transparent")
         btn_row.pack()
 
-        # Ouvrir fichier
         btn_open = mk("▶", lambda: _xopen(fp) if exists else None, tc=C["cyan"], w=34)
         btn_open.pack(side="left", padx=(0,3))
         if not exists: btn_open.configure(state="disabled")
 
-        # Ouvrir dossier
         folder = os.path.dirname(fp) if fp else ""
         folder_ok = os.path.isdir(folder)
         btn_dir = mk("Dir", lambda: _xopen(folder) if folder_ok else None, tc=C["text2"], w=38)
         btn_dir.pack(side="left", padx=(0,3))
         if not folder_ok: btn_dir.configure(state="disabled")
 
-        # Supprimer de l'historique
         mk("✕", lambda: self.on_delete(self.entry["id"]), tc=C["red"], w=30).pack(side="left")
 
     def _load_thumb(self):
@@ -288,9 +279,7 @@ class HistoryPanel(ctk.CTkFrame):
         self.grid_columnconfigure(0, weight=1)
         self._build()
 
-    # ── Construction ──────────────────────────────────────────────────────
     def _build(self):
-        # Barre de recherche + actions
         top = ctk.CTkFrame(self, fg_color="transparent")
         top.grid(row=0, column=0, sticky="ew", padx=8, pady=(6,4))
         top.grid_columnconfigure(0, weight=1)
@@ -316,7 +305,6 @@ class HistoryPanel(ctk.CTkFrame):
             corner_radius=8, command=self._clear_all,
         ).grid(row=0, column=2)
 
-        # Zone défilante
         self._scroll = ctk.CTkScrollableFrame(
             self, fg_color="transparent",
             scrollbar_button_color=C["border"],
@@ -335,9 +323,7 @@ class HistoryPanel(ctk.CTkFrame):
 
         self._render()
 
-    # ── Rendu de la liste ──────────────────────────────────────────────────
     def _render(self):
-        # Détruire les anciennes lignes
         for r in self._rows:
             r.grid_forget(); r.destroy()
         self._rows.clear()
@@ -375,7 +361,6 @@ class HistoryPanel(ctk.CTkFrame):
         self._render()
 
     def refresh(self):
-        """Appelé depuis l'extérieur après un nouveau téléchargement."""
         self._render()
 
 
@@ -419,7 +404,6 @@ class DownloadCard(ctk.CTkFrame):
     def _build(self):
         self.columnconfigure(1, weight=1)
 
-        # Miniature
         tf = ctk.CTkFrame(self, fg_color=C["thumb_bg"], corner_radius=7,
                           width=THUMB_W, height=THUMB_H)
         tf.grid(row=0, column=0, rowspan=3, padx=(10,8), pady=10, sticky="n")
@@ -433,7 +417,6 @@ class DownloadCard(ctk.CTkFrame):
             w.bind("<Enter>",    lambda _: self._thumb_icon.configure(text_color=C["cyan"]))
             w.bind("<Leave>",    lambda _: self._thumb_icon.configure(text_color=C["dim2"]))
 
-        # Ligne 0 : titre + boutons
         row0 = ctk.CTkFrame(self, fg_color="transparent")
         row0.grid(row=0, column=1, sticky="ew", padx=(0,10), pady=(10,2))
         row0.columnconfigure(0, weight=1)
@@ -463,7 +446,6 @@ class DownloadCard(ctk.CTkFrame):
         self._btn_cancel.configure(state="disabled")
         self._btn_folder.configure(state="disabled")
 
-        # Ligne 1 : qualité / taille / vitesse
         row1 = ctk.CTkFrame(self, fg_color="transparent")
         row1.grid(row=1, column=1, sticky="ew", padx=(0,10), pady=(0,2))
         self._qual_menu = ctk.CTkOptionMenu(
@@ -486,7 +468,6 @@ class DownloadCard(ctk.CTkFrame):
                                         text_color=C["dim"])
         self._lbl_eta.pack(side="left", padx=(6,0))
 
-        # Ligne 2 : barre de progression
         row2 = ctk.CTkFrame(self, fg_color="transparent")
         row2.grid(row=2, column=1, sticky="ew", padx=(0,10), pady=(0,10))
         row2.columnconfigure(0, weight=1)
@@ -514,11 +495,9 @@ class DownloadCard(ctk.CTkFrame):
         self._thumb_ref = img
         self._thumb_icon.configure(image=img, text="")
 
-    # ── Taille estimée avant téléchargement ───────────────────────────────
     def _start_size_fetch(self, on_ready=None):
         if on_ready is not None:
             self._on_size_ready = on_ready
-        # Ne pas refaire le fetch si le DL est déjà en cours / terminé
         if self.status in ("downloading", "paused", "done"): return
         self._lbl_size.configure(text="...", text_color=C["dim2"])
         threading.Thread(target=self._do_size_fetch, daemon=True).start()
@@ -593,7 +572,6 @@ class DownloadCard(ctk.CTkFrame):
             if name == sel: return fmt, audio
         return QUALITIES[0][1], False
 
-    # ── États ─────────────────────────────────────────────────────────────
     def set_downloading(self, dest):
         self.status = "downloading"; self.dest_dir = dest
         self._qual_menu.configure(state="disabled")
@@ -676,6 +654,9 @@ class DownloadCard(ctk.CTkFrame):
 # ╚══════════════════════════════════════════════════════════════════════════════
 class YTDLXApp(ctk.CTk):
 
+    # Caractères du spinner braille (rotation fluide)
+    _SPIN = ["⠋","⠙","⠹","⠸","⠼","⠴","⠦","⠧","⠇","⠏"]
+
     def __init__(self):
         super().__init__()
         self.title("My Yt Video Downloader")
@@ -686,7 +667,14 @@ class YTDLXApp(ctk.CTk):
         self._gqual   = tk.StringVar(value=Q_NAMES[0])
         self.cards: list[DownloadCard] = []
         self._history = HistoryManager()
-        self._active_tab = "queue"   # "queue" | "history"
+        self._active_tab = "queue"
+
+        # ── État du fetch d'infos ──────────────────────────────────────────
+        self._fetch_cancel_ev = threading.Event()   # signale l'annulation
+        self._fetch_running   = False               # garde-fou UI
+        self._anim_job        = None                # id du after() spinner
+        self._anim_idx        = 0
+
         self._build_ui()
 
     @staticmethod
@@ -726,13 +714,16 @@ class YTDLXApp(ctk.CTk):
                                border_width=1, border_color=C["border"])
         url_box.grid(row=1, column=0, padx=14, pady=(12,5), sticky="ew")
         url_box.grid_columnconfigure(0, weight=1)
+
         ctk.CTkLabel(url_box,
                      text="  URL YouTube — vidéo ou playlist complète",
                      font=("Segoe UI",10), text_color=C["dim"], anchor="w",
         ).grid(row=0, column=0, padx=14, pady=(8,1), sticky="w")
+
         ur = ctk.CTkFrame(url_box, fg_color="transparent")
-        ur.grid(row=1, column=0, padx=10, pady=(0,10), sticky="ew")
+        ur.grid(row=1, column=0, padx=10, pady=(0,6), sticky="ew")
         ur.grid_columnconfigure(0, weight=1)
+
         self._url_ent = ctk.CTkEntry(
             ur, placeholder_text="https://youtube.com/watch?v=...  ou  playlist?list=...",
             font=("Courier New",11), height=42,
@@ -741,12 +732,31 @@ class YTDLXApp(ctk.CTk):
         )
         self._url_ent.grid(row=0, column=0, sticky="ew", padx=(0,8))
         self._url_ent.bind("<Return>", lambda _: self._fetch_and_add())
+
         self._btn_add = ctk.CTkButton(
             ur, text="+  Ajouter", font=("Segoe UI",12,"bold"),
             width=120, height=42, fg_color=C["accent"],
-            hover_color=C["accent_dim"], corner_radius=10, command=self._fetch_and_add,
+            hover_color=C["accent_dim"], corner_radius=10,
+            command=self._fetch_and_add,
         )
         self._btn_add.grid(row=0, column=1)
+
+        # ── Barre de progression indéterminée (cachée par défaut) ───────────
+        # Affichée uniquement pendant le fetch d'informations
+        self._fetch_pb = ctk.CTkProgressBar(
+            url_box, mode="indeterminate", height=3,
+            fg_color=C["border"], progress_color=C["accent"],
+        )
+        self._fetch_pb.grid(row=2, column=0, padx=10, pady=(0,8), sticky="ew")
+        self._fetch_pb.grid_remove()   # cachée au départ
+
+        # ── Label de statut du fetch (vidéos trouvées, etc.) ────────────────
+        self._lbl_fetch_info = ctk.CTkLabel(
+            url_box, text="", font=("Segoe UI",10),
+            text_color=C["dim"], anchor="w",
+        )
+        self._lbl_fetch_info.grid(row=3, column=0, padx=14, pady=(0,6), sticky="w")
+        self._lbl_fetch_info.grid_remove()
 
         # ── Options ─────────────────────────────────────────────────────────
         opt = ctk.CTkFrame(self, fg_color=C["surface"], corner_radius=12,
@@ -782,7 +792,6 @@ class YTDLXApp(ctk.CTk):
         tab_container.grid_rowconfigure(1, weight=1)
         tab_container.grid_columnconfigure(0, weight=1)
 
-        # Onglets
         tab_bar = ctk.CTkFrame(tab_container, fg_color="transparent", height=42)
         tab_bar.grid(row=0, column=0, sticky="ew", padx=10, pady=(8,0))
         tab_bar.grid_columnconfigure(2, weight=1)
@@ -812,7 +821,6 @@ class YTDLXApp(ctk.CTk):
         )
         self._lbl_q.grid(row=0, column=2, padx=(8,0), sticky="w")
 
-        # Bouton Nettoyer (à droite dans la tab bar)
         ctk.CTkButton(
             tab_bar, text="Nettoyer", font=("Segoe UI",10),
             height=28, width=80, fg_color=C["card2"],
@@ -847,7 +855,6 @@ class YTDLXApp(ctk.CTk):
             tab_container, history=self._history,
             on_redownload=self._redownload_from_history,
         )
-        # Masquée au départ
         self._page_history.grid(row=1, column=0, sticky="nsew", padx=6, pady=(4,6))
         self._page_history.grid_remove()
 
@@ -863,7 +870,6 @@ class YTDLXApp(ctk.CTk):
         )
         self._lbl_status.grid(row=0, column=0, padx=18, sticky="w")
 
-        # Label total taille
         self._lbl_total = ctk.CTkLabel(
             foot, text="",
             font=("Segoe UI", 11), text_color=C["dim"],
@@ -925,10 +931,8 @@ class YTDLXApp(ctk.CTk):
         self._lbl_q.configure(text="  •  ".join(parts))
 
     def _refresh_total(self, _card=None):
-        """Recalcule et affiche le total des tailles estimées de la file."""
         if not self.cards:
-            self._lbl_total.configure(text="")
-            return
+            self._lbl_total.configure(text=""); return
         known   = [(c._size_bytes or c._fetched_size) for c in self.cards
                    if (c._size_bytes or c._fetched_size) > 0]
         pending = [c for c in self.cards
@@ -937,9 +941,8 @@ class YTDLXApp(ctk.CTk):
         total   = sum(known)
         sz      = fmt_bytes(total)
         if not sz:
-            self._lbl_total.configure(text="")
-            return
-        tilde   = "~" if pending else ""   # ~ si certaines tailles encore inconnues
+            self._lbl_total.configure(text=""); return
+        tilde   = "~" if pending else ""
         n_known = len(known)
         n_total = len(self.cards)
         count   = f"{n_known}/{n_total}" if n_known < n_total else f"{n_total}"
@@ -949,15 +952,84 @@ class YTDLXApp(ctk.CTk):
         )
 
     # ══════════════════════════════════════════════════════════════════════════
+    #  Spinner / animation pendant le fetch
+    # ══════════════════════════════════════════════════════════════════════════
+    def _start_spinner(self):
+        """Démarre l'animation braille dans la barre de statut."""
+        self._stop_spinner()
+        self._anim_idx = 0
+        self._tick_spinner()
+
+    def _tick_spinner(self):
+        spin = self._SPIN[self._anim_idx % len(self._SPIN)]
+        self._anim_idx += 1
+        # Met à jour le statut avec l'icône tournante
+        self._lbl_status.configure(
+            text=f"  {spin}  Récupération des informations en cours…",
+            text_color=C["cyan"],
+        )
+        self._anim_job = self.after(80, self._tick_spinner)
+
+    def _stop_spinner(self):
+        if self._anim_job is not None:
+            self.after_cancel(self._anim_job)
+            self._anim_job = None
+
+    # ══════════════════════════════════════════════════════════════════════════
+    #  Helpers UI fetch (factorisation)
+    # ══════════════════════════════════════════════════════════════════════════
+    def _fetch_ui_start(self):
+        """Passe l'UI en mode 'chargement en cours'."""
+        self._fetch_running = True
+        # Le bouton devient "Annuler" (rouge)
+        self._btn_add.configure(
+            text="✕  Annuler",
+            fg_color=C["red"],
+            hover_color="#c0294f",
+            command=self._cancel_fetch,
+        )
+        # Barre indéterminée visible + démarrée
+        self._fetch_pb.grid()
+        self._fetch_pb.start()
+        # Spinner dans le footer
+        self._start_spinner()
+        # Info fetch sous la barre
+        self._lbl_fetch_info.configure(text="")
+        self._lbl_fetch_info.grid()
+
+    def _fetch_ui_stop(self):
+        """Remet l'UI dans l'état normal après un fetch (succès, erreur ou annulation)."""
+        self._fetch_running = False
+        self._stop_spinner()
+        self._fetch_pb.stop()
+        self._fetch_pb.grid_remove()
+        self._lbl_fetch_info.grid_remove()
+        # Restaurer le bouton Ajouter
+        self._btn_add.configure(
+            text="+  Ajouter",
+            fg_color=C["accent"],
+            hover_color=C["accent_dim"],
+            command=self._fetch_and_add,
+            state="normal",
+        )
+
+    # ══════════════════════════════════════════════════════════════════════════
     #  Récupération URL
     # ══════════════════════════════════════════════════════════════════════════
     def _fetch_and_add(self):
+        # Ignore si un fetch est déjà en cours
+        if self._fetch_running:
+            return
+
         url = self._url_ent.get().strip()
-        if not url: return
-        self._url_ent.delete(0, "end")
-        self._btn_add.configure(state="disabled", text="Chargement…")
-        self._status("Récupération des informations…", C["cyan"])
-        # Switcher sur la file automatiquement
+        if not url:
+            return
+
+        # On NE vide PAS l'URL ici — seulement en cas de succès
+        self._fetch_cancel_ev.clear()
+        self._fetch_ui_start()
+
+        # Basculer sur l'onglet file automatiquement
         if self._active_tab != "queue":
             self._switch_tab("queue")
 
@@ -967,24 +1039,64 @@ class YTDLXApp(ctk.CTk):
                         "extract_flat":"in_playlist","skip_download":True}
                 with yt_dlp.YoutubeDL(opts) as ydl:
                     info = ydl.extract_info(url, download=False)
+
+                # Annulation demandée pendant le fetch réseau ?
+                if self._fetch_cancel_ev.is_set():
+                    self.after(0, self._on_fetch_cancelled)
+                    return
+
                 items = []
                 if "entries" in info:
-                    for e in (info.get("entries") or []):
-                        if not e: continue
+                    entries = [e for e in (info.get("entries") or []) if e]
+                    total_pl = len(entries)
+                    for i, e in enumerate(entries, 1):
+                        if self._fetch_cancel_ev.is_set():
+                            # Annulation en cours de parsing playlist
+                            self.after(0, self._on_fetch_cancelled)
+                            return
                         vid_url = (e.get("webpage_url") or e.get("url")
                                    or f"https://www.youtube.com/watch?v={e.get('id','')}")
                         items.append((e.get("title") or "Sans titre", vid_url, _best_thumb(e)))
+                        # Mise à jour compteur playlist en live
+                        self.after(0, lambda c=i, t=total_pl:
+                                   self._lbl_fetch_info.configure(
+                                       text=f"  Playlist : {c} / {t} vidéos trouvées…",
+                                       text_color=C["accent_glow"],
+                                   ))
                 else:
                     items.append((info.get("title") or "Sans titre", url, _best_thumb(info)))
-                self.after(0, lambda: self._add_cards(items))
+
+                self.after(0, lambda it=items: self._add_cards(it))
+
             except Exception as ex:
-                self.after(0, lambda: self._fetch_err(str(ex)))
+                if self._fetch_cancel_ev.is_set():
+                    self.after(0, self._on_fetch_cancelled)
+                else:
+                    self.after(0, lambda: self._fetch_err(str(ex)))
 
         threading.Thread(target=_work, daemon=True).start()
 
+    def _cancel_fetch(self):
+        """L'utilisateur a cliqué sur Annuler pendant le fetch."""
+        self._fetch_cancel_ev.set()
+        # L'UI sera remise en état par _on_fetch_cancelled (appelé depuis le thread)
+        # ou directement ici si le thread a déjà terminé.
+        self._on_fetch_cancelled()
+
+    def _on_fetch_cancelled(self):
+        self._fetch_ui_stop()
+        # L'URL est conservée intacte — l'utilisateur peut réessayer
+        self._status("  Chargement annulé.", C["yellow"])
+
     def _add_cards(self, items):
+        """Appelé après un fetch réussi — vide l'input URL et ajoute les cartes."""
+        self._fetch_ui_stop()
+        # ── Vider l'URL seulement en cas de succès ──
+        self._url_ent.delete(0, "end")
+
         if self._lbl_empty.winfo_ismapped():
             self._lbl_empty.grid_forget()
+
         for title, url, thumb in items:
             card = DownloadCard(
                 self._scroll, title=title, url=url, thumb_url=thumb,
@@ -994,16 +1106,20 @@ class YTDLXApp(ctk.CTk):
             )
             card.grid(row=len(self.cards)+1, column=0, sticky="ew", padx=4, pady=4)
             self.cards.append(card)
-            # Lance le fetch de taille en arrière-plan
             card._start_size_fetch(on_ready=self._refresh_total)
+
         self._refresh_q()
         self._refresh_total()
-        self._btn_add.configure(state="normal", text="+  Ajouter")
-        self._status(f"  {len(items)} vidéo(s) ajoutée(s) à la file.", C["green"])
+        n = len(items)
+        self._status(
+            f"  ✓  {n} vidéo(s) ajoutée(s) à la file.",
+            C["green"],
+        )
 
     def _fetch_err(self, msg):
-        self._btn_add.configure(state="normal", text="+  Ajouter")
-        self._status(f"Erreur : {strip_ansi(msg)[:90]}", C["red"])
+        self._fetch_ui_stop()
+        # URL conservée pour que l'utilisateur puisse corriger et réessayer
+        self._status(f"  ✗  Erreur : {strip_ansi(msg)[:90]}", C["red"])
 
     # ── Re-télécharger depuis l'historique ────────────────────────────────
     def _redownload_from_history(self, entry: dict):
@@ -1052,7 +1168,6 @@ class YTDLXApp(ctk.CTk):
         self._run_queue(pending, 0)
 
     def _run_one(self, card: "DownloadCard"):
-        """Télécharge une seule carte indépendamment de la file."""
         if card.status != "pending": return
         self._run_queue([card], 0)
 
@@ -1060,13 +1175,12 @@ class YTDLXApp(ctk.CTk):
     #  Exécution séquentielle + sauvegarde historique
     # ══════════════════════════════════════════════════════════════════════════
     def _run_queue(self, queue, idx):
-        is_solo = (len(queue) == 1)   # True = DL d'une seule carte
+        is_solo = (len(queue) == 1)
         if idx >= len(queue):
             if not is_solo:
                 self._btn_dl.configure(state="normal", text="↓  Tout télécharger")
                 self._status("✓  Tous les téléchargements terminés !", C["green"])
             else:
-                # Solo : juste remettre le bouton global si aucun batch n'est actif
                 still_active = any(c.status in ("downloading","paused")
                                    for c in self.cards)
                 if not still_active:
@@ -1077,10 +1191,10 @@ class YTDLXApp(ctk.CTk):
         if card.status != "pending":
             self.after(0, lambda: self._run_queue(queue, idx+1)); return
 
-        dest           = self._dest.get()
+        dest              = self._dest.get()
         fmt_str, is_audio = card.get_quality()
-        fp_ref         = [None]
-        n              = len(queue)
+        fp_ref            = [None]
+        n                 = len(queue)
 
         card.set_downloading(dest)
         if is_solo:
@@ -1139,7 +1253,6 @@ class YTDLXApp(ctk.CTk):
                                 fp_ref[0] = base+ext; break
 
                 fp = fp_ref[0]
-                # ── Enregistrer dans l'historique ──────────────────────────
                 try:
                     sz = os.path.getsize(fp) if fp and os.path.exists(fp) else card._size_bytes
                 except Exception: sz = card._size_bytes
@@ -1151,7 +1264,6 @@ class YTDLXApp(ctk.CTk):
                     filepath=fp or "",
                     size_bytes=sz,
                 )
-                # Mettre à jour le badge de l'onglet historique
                 self.after(0, self._update_history_badge)
                 self.after(0, lambda: card.set_done(fp))
 
@@ -1174,7 +1286,6 @@ class YTDLXApp(ctk.CTk):
         self._tab_h_btn.configure(
             text=f"◷  Historique  ({n})" if n else "◷  Historique"
         )
-        # Si le panneau historique est visible, le rafraîchir aussi
         if self._active_tab == "history":
             self._page_history.refresh()
 
